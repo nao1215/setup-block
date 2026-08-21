@@ -6,7 +6,7 @@ Install the [block](https://github.com/nao1215/block) CLI in a workflow,
 restore its toolchain cache, and run the tools a repository pinned.
 
 ```yaml
-- uses: actions/checkout@v4
+- uses: actions/checkout@v6
 - uses: nao1215/setup-block@v0
   with:
     sync: "true"
@@ -26,8 +26,9 @@ your tools with that toolchain on `PATH`.
   unchanged toolchain is restored instead of re-downloaded.
 - Optionally runs `block sync` so later steps can call `block exec`.
 
-Linux and macOS runners, amd64 and arm64. block ships no Windows builds, so a
-Windows runner is refused with an explanation rather than a download error.
+Linux, macOS and Windows runners, on x86-64 and arm64 — every platform block
+itself publishes a build for. Whether a given tool has a build for the runner
+you chose is answered by `block.lock`, not by this action.
 
 ## Without syncing
 
@@ -50,4 +51,7 @@ request. A scheduled job can tell you when one is worth making — `block lock
 - run: block lock --check
 ```
 
-See the [reference](reference/) for every input and output.
+The [cookbook](/cookbook/) has the rest — matrices across runners, monorepo
+subdirectories, cache control, signature and provenance verification, guarding
+the lockfile in a pull request, and reading a failure. The
+[reference](/reference/) lists every input and output.

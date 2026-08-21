@@ -1,0 +1,20 @@
+{{/* Build the cookbook page from doc/cookbook.md, committed in this repository
+     and mounted under assets/. The committed file stays the single source of
+     truth; this template only strips the H1 (the layout renders the title) and
+     rewrites repository-relative links to GitHub. */}}
+
+{{ $gh := "https://github.com/nao1215/setup-block/blob/main/" }}
+
+{{ with resources.Get "doc/cookbook.md" }}
+  {{ $md := .Content }}
+  {{ $md = replaceRE `\A# Cookbook\n` "" $md }}
+  {{ $md = replaceRE `\]\(\.\./` (printf "](%s" $gh) $md }}
+  {{ $.AddPage (dict
+      "path" "cookbook"
+      "title" "Cookbook"
+      "params" (dict
+        "description" "Copyable setup-block workflow steps indexed by task: install and sync, matrices across runners, monorepo subdirectories, cache control, cosign and provenance verification, guarding the lockfile, and reading a failure."
+        "toc" true
+        "filter" true)
+      "content" (dict "mediaType" "text/markdown" "value" $md)) }}
+{{ end }}

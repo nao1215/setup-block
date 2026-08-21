@@ -16,7 +16,6 @@ repo = "https://github.com/nao1215/setup-block"
 
 [markup.highlight]
 noClasses = false
-style = "github"
 
 [markup.tableOfContents]
 startLevel = 2
@@ -28,6 +27,11 @@ pageRef = "/"
 weight = 10
 
 [[menus.main]]
+name = "Cookbook"
+pageRef = "/cookbook"
+weight = 15
+
+[[menus.main]]
 name = "Reference"
 pageRef = "/reference"
 weight = 20
@@ -37,7 +41,30 @@ name = "block"
 url = "https://nao1215.github.io/block/"
 weight = 30
 
-[[menus.main]]
-name = "GitHub"
-url = "https://github.com/nao1215/setup-block"
-weight = 40
+[module]
+[[module.mounts]]
+source = "content"
+target = "content"
+
+[[module.mounts]]
+source = "layouts"
+target = "layouts"
+
+[[module.mounts]]
+source = "assets"
+target = "assets"
+
+# Repository docs, mounted so pages can be generated from the committed files.
+[[module.mounts]]
+source = "../doc/cookbook.md"
+target = "assets/doc/cookbook.md"
+
+# Images served as-is, and mounted again as processable assets so the layouts
+# can derive a social card and a favicon at build time.
+[[module.mounts]]
+source = "../doc/img"
+target = "static/img"
+
+[[module.mounts]]
+source = "../doc/img"
+target = "assets/imgsrc"
