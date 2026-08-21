@@ -87,7 +87,16 @@ resolve_version() {
     body="$(gh_curl "https://api.github.com/repos/${OWNER}/${REPO}/releases/latest")" \
       || die "failed to query the latest release from the GitHub API"
     # Extract tag_name without depending on jq.
-    tag="$(printf '%s' "$body" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')"
+    #
+    # Every stage reads its input to the end. Under `set -o pipefail` a reader
+    # that stops early — grep -m1, head -n1, awk with exit — sends SIGPIPE to
+    # whatever is still writing, and the pipeline then fails the script for a
+    # reason that has nothing to do with the answer it just produced. That is
+    # what "printf: write error: Broken pipe" was on this line.
+    #
+    # Splitting on commas first also keeps the greedy .* below inside one JSON
+    # field rather than letting it run to the last "tag_name" on the line.
+    tag="$(printf '%s' "$body" | tr ',' '\n' | sed -nE 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' | awk 'NR==1')"
     [ -n "$tag" ] || die "could not determine the latest release tag (has block been released yet?)"
     requested="$tag"
   fi
@@ -172,7 +181,9 @@ sha256_of() {
 verify_checksum() {
   local archive="$1" checksums="$2" name="$3"
   local expected actual
-  expected="$(grep -E "[[:space:]]\*?${name//./\\.}$" "$checksums" | awk '{print $1}' | head -n1)"
+  # awk 'NR==1' rather than head -n1: head stops reading, which sends SIGPIPE
+  # to the stage before it and fails the pipeline under `set -o pipefail`.
+  expected="$(grep -E "[[:space:]]\*?${name//./\\.}$" "$checksums" | awk 'NR==1{print $1}')"
   [ -n "$expected" ] || die "checksum for ${name} not found in checksums.txt"
 
   actual="$(sha256_of "$archive")" \
@@ -269,7 +280,9 @@ main() {
 
   local bin_name="${BINARY}${BIN_SUFFIX}"
   local src_bin
-  src_bin="$(find "$extract_dir" -type f -name "$bin_name" | head -n1)"
+  # Same reason as above: head -n1 would stop reading while find is still
+  # walking, and a second match would kill find with SIGPIPE.
+  src_bin="$(find "$extract_dir" -type f -name "$bin_name" | awk 'NR==1')"
   [ -n "$src_bin" ] || die "binary '${bin_name}' not found inside ${archive_name}"
 
   local install_dir="${INPUT_INSTALL_DIR:-}"

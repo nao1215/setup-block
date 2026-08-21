@@ -33,6 +33,12 @@ The first release, alongside [block v0.1.0](https://github.com/nao1215/block/rel
   monorepos where they are not at the root.
 - Exports `$BLOCK_HOME` and adds the install directory to `PATH` for the steps
   that follow, both switchable.
+- The install script reads every pipeline to the end. A reader that stops
+  early — `grep -m1`, `head -n1` — sends SIGPIPE to whatever is still writing,
+  and under `set -o pipefail` that failed the action with
+  `printf: write error: Broken pipe` after it had already resolved the answer.
+  Found by the integration test on its first run against a real release, which
+  is what that test is gated on block having.
 - An integration test that installs block on all five supported runners,
   syncs a real toolchain, and proves it runs through `block exec` and through
   the shims.
