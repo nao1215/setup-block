@@ -97,12 +97,20 @@ jobs:
         working-directory: testdata/project
         run: block exec cometbft version
 
+      # Exactly the line the cookbook tells a reader to write, so this checks
+      # the documentation rather than a hand-rolled equivalent of it. The
+      # difference is not academic: composing PATH inside the step with
+      # "$BLOCK_HOME/shims:$PATH" is wrong on Windows, where $BLOCK_HOME is
+      # C:\Users\... and the colon in the drive letter is a PATH separator to
+      # bash. One entry per line in $GITHUB_PATH has no such problem.
+      - name: Put the shims on PATH, the way the cookbook says to
+        shell: bash
+        run: echo "$BLOCK_HOME/shims" >> "$GITHUB_PATH"
+
       - name: The shims run the same toolchain without "block exec"
         shell: bash
         working-directory: testdata/project
-        run: |
-          export PATH="$BLOCK_HOME/shims:$PATH"
-          cometbft version
+        run: cometbft version
 
       - name: Syncing again is a cache hit and changes nothing
         shell: bash
