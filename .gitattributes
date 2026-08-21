@@ -1,0 +1,12 @@
+# Normalize line endings to LF on checkout across every platform. scripts/
+# holds POSIX shell that runs on Windows runners under Git Bash, where a CRLF
+# checkout makes every line end in a stray carriage return that bash treats as
+# part of the command.
+* text=auto eol=lf
+
+# Binary assets must never be EOL-translated (it would corrupt them).
+*.png -text
+*.gif -text
+*.jpg -text
+*.jpeg -text
+*.ico -text
