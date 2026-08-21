@@ -33,6 +33,10 @@ The first release, alongside [block v0.1.0](https://github.com/nao1215/block/rel
   monorepos where they are not at the root.
 - Exports `$BLOCK_HOME` and adds the install directory to `PATH` for the steps
   that follow, both switchable.
+- Every path the action exports is in the runner's native form: on Windows the
+  outputs said `/c/Users/...` while `$BLOCK_HOME` said `C:\Users\...`, so an
+  output could not be handed to a PowerShell or cmd step and did not compare
+  equal to the environment variable naming the same directory.
 - The install script reads every pipeline to the end. A reader that stops
   early — `grep -m1`, `head -n1` — sends SIGPIPE to whatever is still writing,
   and under `set -o pipefail` that failed the action with

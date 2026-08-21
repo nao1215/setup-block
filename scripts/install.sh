@@ -301,15 +301,26 @@ main() {
 
   # Every later step — cached or not — must agree with this action about
   # where the toolchain lives.
-  set_env "BLOCK_HOME" "$(to_native_path "$BLOCK_HOME_DIR")"
+  local native_home native_bin native_install_dir
+  native_home="$(to_native_path "$BLOCK_HOME_DIR")"
+  native_bin="$(to_native_path "$dest_bin")"
+  native_install_dir="$(to_native_path "$install_dir")"
 
-  log "Installed ${bin_name} -> ${dest_bin}"
-  log "BLOCK_HOME=${BLOCK_HOME_DIR}"
+  set_env "BLOCK_HOME" "$native_home"
 
+  log "Installed ${bin_name} -> ${native_bin}"
+  log "BLOCK_HOME=${native_home}"
+
+  # The outputs are converted too, and to the same spelling as $BLOCK_HOME and
+  # $GITHUB_PATH above. This script runs under Git Bash on Windows, so an
+  # unconverted path is /c/Users/... — which a following PowerShell or cmd
+  # step cannot resolve, and which does not compare equal to the $BLOCK_HOME
+  # this action just exported. One directory, one spelling, whatever shell the
+  # next step uses.
   set_output "version" "$TAG"
-  set_output "bin-path" "$dest_bin"
-  set_output "install-dir" "$install_dir"
-  set_output "block-home" "$BLOCK_HOME_DIR"
+  set_output "bin-path" "$native_bin"
+  set_output "install-dir" "$native_install_dir"
+  set_output "block-home" "$native_home"
 }
 
 # Only run when executed directly, so tests can source the functions above.
