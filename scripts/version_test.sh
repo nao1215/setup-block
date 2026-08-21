@@ -53,12 +53,38 @@ check_home "${tmp_home}/store" "${tmp_home}/store"
 [ -d "${tmp_home}/store" ] || { printf 'FAIL: block-home directory was not created\n'; failures=$((failures + 1)); }
 rm -rf "$tmp_home"
 
-# A Windows runner must be refused with an explanation, not a download 404.
-if ( RUNNER_OS=Windows RUNNER_ARCH=X64 detect_platform ) 2>/dev/null; then
-  printf 'FAIL: a Windows runner was accepted\n'
+check_platform() {
+  local runner_os="$1" runner_arch="$2" want_os="$3" want_arch="$4" want_ext="$5"
+  OS="" ARCH="" EXT="" BIN_SUFFIX=""
+  RUNNER_OS="$runner_os" RUNNER_ARCH="$runner_arch"
+  detect_platform
+  if [ "$OS" != "$want_os" ] || [ "$ARCH" != "$want_arch" ] || [ "$EXT" != "$want_ext" ]; then
+    printf 'FAIL: %-8s %-6s -> %s/%s.%s (want %s/%s.%s)\n' \
+      "$runner_os" "$runner_arch" "$OS" "$ARCH" "$EXT" "$want_os" "$want_arch" "$want_ext"
+    failures=$((failures + 1))
+  else
+    printf 'ok:   %-8s %-6s -> %s/%s.%s\n' "$runner_os" "$runner_arch" "$OS" "$ARCH" "$EXT"
+  fi
+}
+
+# Every runner block publishes a build for, including the Windows zip and the
+# .exe the rest of the script keys off.
+check_platform Linux   X64   linux   amd64 tar.gz
+check_platform Linux   ARM64 linux   arm64 tar.gz
+check_platform macOS   ARM64 darwin  arm64 tar.gz
+check_platform Windows X64   windows amd64 zip
+check_platform Windows ARM64 windows arm64 zip
+if [ "$BIN_SUFFIX" != ".exe" ]; then
+  printf 'FAIL: Windows binaries need the .exe suffix, got %s\n' "'${BIN_SUFFIX}'"
+  failures=$((failures + 1))
+fi
+
+# An unknown runner is refused rather than guessed at.
+if ( RUNNER_OS=Plan9 RUNNER_ARCH=X64 detect_platform ) 2>/dev/null; then
+  printf 'FAIL: an unknown runner OS was accepted\n'
   failures=$((failures + 1))
 else
-  printf 'ok:   a Windows runner is refused\n'
+  printf 'ok:   an unknown runner OS is refused\n'
 fi
 
 if [ "$failures" -ne 0 ]; then

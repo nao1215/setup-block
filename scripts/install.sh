@@ -3,13 +3,15 @@
 # install.sh — download and install a prebuilt block release binary, and
 # export $BLOCK_HOME for the steps that follow.
 #
-# Runs as a composite-action step on GitHub-hosted runners. block ships Linux
-# and macOS builds only, so a Windows runner is refused with a clear message
-# rather than a confusing 404.
+# Runs as a composite-action step on GitHub-hosted runners: Linux, macOS and
+# Windows. On Windows it executes under Git Bash, so it relies only on tools
+# that ship with every runner (bash, curl, tar, and either unzip or
+# PowerShell).
 #
 # Release artifacts are produced by block's goreleaser config, e.g.:
 #   block_0.1.0_linux_amd64.tar.gz
 #   block_0.1.0_darwin_arm64.tar.gz
+#   block_0.1.0_windows_amd64.zip
 #   checksums.txt
 #   checksums.txt.sigstore.json
 set -euo pipefail
@@ -58,12 +60,10 @@ gh_curl() {
 # ---------------------------------------------------------------------------
 detect_platform() {
   case "${RUNNER_OS:-}" in
-    Linux) OS="linux" ;;
-    macOS) OS="darwin" ;;
-    Windows)
-      die "block does not ship Windows builds: the blockchain toolchains it installs are Linux and macOS only. Use a Linux or macOS runner."
-      ;;
-    *) die "unsupported runner OS: '${RUNNER_OS:-}' (expected Linux or macOS)" ;;
+    Linux)   OS="linux"   ; EXT="tar.gz" ; BIN_SUFFIX=""     ;;
+    macOS)   OS="darwin"  ; EXT="tar.gz" ; BIN_SUFFIX=""     ;;
+    Windows) OS="windows" ; EXT="zip"    ; BIN_SUFFIX=".exe" ;;
+    *) die "unsupported runner OS: '${RUNNER_OS:-}' (expected Linux, macOS or Windows)" ;;
   esac
 
   case "${RUNNER_ARCH:-}" in
@@ -111,6 +111,47 @@ resolve_block_home() {
   mkdir -p "$BLOCK_HOME_DIR"
 }
 
+# Convert a path to the runner's native form before writing it to $GITHUB_PATH
+# or $GITHUB_ENV. On Windows this script runs under Git Bash, so a POSIX path
+# like /c/foo would not resolve for a following PowerShell step; cygpath
+# rewrites it to C:\foo.
+to_native_path() {
+  local path="$1"
+  if [ "${OS:-}" = "windows" ] && command -v cygpath >/dev/null 2>&1; then
+    cygpath -w "$path"
+  else
+    printf '%s' "$path"
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# Extract the archive into a directory.
+# ---------------------------------------------------------------------------
+extract_archive() {
+  local archive="$1" dest="$2"
+  mkdir -p "$dest"
+  case "$archive" in
+  *.tar.gz | *.tgz)
+    tar -xzf "$archive" -C "$dest"
+    ;;
+  *.zip)
+    if command -v unzip >/dev/null 2>&1; then
+      unzip -oq "$archive" -d "$dest"
+    elif command -v pwsh >/dev/null 2>&1 || command -v powershell >/dev/null 2>&1; then
+      local ps
+      ps="$(command -v pwsh || command -v powershell)"
+      "$ps" -NoProfile -NonInteractive -Command \
+        "Expand-Archive -Path '${archive}' -DestinationPath '${dest}' -Force"
+    else
+      die "cannot extract ${archive}: neither unzip nor PowerShell is available"
+    fi
+    ;;
+  *)
+    die "unsupported archive format: ${archive}"
+    ;;
+  esac
+}
+
 # ---------------------------------------------------------------------------
 # Verify the archive against checksums.txt (SHA-256).
 # ---------------------------------------------------------------------------
@@ -120,6 +161,9 @@ sha256_of() {
     sha256sum "$file" | awk '{print $1}'
   elif command -v shasum >/dev/null 2>&1; then
     shasum -a 256 "$file" | awk '{print $1}'
+  elif command -v certutil >/dev/null 2>&1; then
+    # Windows fallback: certutil prints the hash on the second line.
+    certutil -hashfile "$file" SHA256 | sed -n '2p' | tr -d '[:space:]'
   else
     return 1
   fi
@@ -132,7 +176,7 @@ verify_checksum() {
   [ -n "$expected" ] || die "checksum for ${name} not found in checksums.txt"
 
   actual="$(sha256_of "$archive")" \
-    || die "no SHA-256 tool (sha256sum/shasum) available to verify ${name}"
+    || die "no SHA-256 tool (sha256sum/shasum/certutil) available to verify ${name}"
 
   expected="$(printf '%s' "$expected" | tr '[:upper:]' '[:lower:]')"
   actual="$(printf '%s' "$actual" | tr '[:upper:]' '[:lower:]')"
@@ -187,7 +231,7 @@ main() {
   resolve_version
   resolve_block_home
 
-  local archive_name="${BINARY}_${NUM_VERSION}_${OS}_${ARCH}.tar.gz"
+  local archive_name="${BINARY}_${NUM_VERSION}_${OS}_${ARCH}.${EXT}"
   local base_url="https://github.com/${OWNER}/${REPO}/releases/download/${TAG}"
 
   log "Installing ${BINARY} ${TAG} (${OS}/${ARCH})"
@@ -221,12 +265,12 @@ main() {
   fi
 
   local extract_dir="${workdir}/extracted"
-  mkdir -p "$extract_dir"
-  tar -xzf "$archive_path" -C "$extract_dir"
+  extract_archive "$archive_path" "$extract_dir"
 
+  local bin_name="${BINARY}${BIN_SUFFIX}"
   local src_bin
-  src_bin="$(find "$extract_dir" -type f -name "$BINARY" | head -n1)"
-  [ -n "$src_bin" ] || die "binary '${BINARY}' not found inside ${archive_name}"
+  src_bin="$(find "$extract_dir" -type f -name "$bin_name" | head -n1)"
+  [ -n "$src_bin" ] || die "binary '${bin_name}' not found inside ${archive_name}"
 
   local install_dir="${INPUT_INSTALL_DIR:-}"
   if [ -z "$install_dir" ]; then
@@ -234,19 +278,19 @@ main() {
   fi
   mkdir -p "$install_dir"
 
-  local dest_bin="${install_dir}/${BINARY}"
+  local dest_bin="${install_dir}/${bin_name}"
   cp "$src_bin" "$dest_bin"
   chmod +x "$dest_bin" 2>/dev/null || true
 
   if [ "${INPUT_ADD_TO_PATH:-true}" = "true" ] && [ -n "${GITHUB_PATH:-}" ]; then
-    printf '%s\n' "$install_dir" >>"$GITHUB_PATH"
+    printf '%s\n' "$(to_native_path "$install_dir")" >>"$GITHUB_PATH"
   fi
 
   # Every later step — cached or not — must agree with this action about
   # where the toolchain lives.
-  set_env "BLOCK_HOME" "$BLOCK_HOME_DIR"
+  set_env "BLOCK_HOME" "$(to_native_path "$BLOCK_HOME_DIR")"
 
-  log "Installed ${BINARY} -> ${dest_bin}"
+  log "Installed ${bin_name} -> ${dest_bin}"
   log "BLOCK_HOME=${BLOCK_HOME_DIR}"
 
   set_output "version" "$TAG"

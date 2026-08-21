@@ -60,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel]
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel, windows-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
@@ -95,7 +95,14 @@ jobs:
       - name: The synced toolchain runs
         shell: bash
         working-directory: testdata/project
-        run: block exec forge --version
+        run: block exec cometbft version
+
+      - name: The shims run the same toolchain without "block exec"
+        shell: bash
+        working-directory: testdata/project
+        run: |
+          export PATH="$BLOCK_HOME/shims:$PATH"
+          cometbft version
 
       - name: Syncing again is a cache hit and changes nothing
         shell: bash

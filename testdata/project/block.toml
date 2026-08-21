@@ -1,10 +1,16 @@
-# The project the integration test installs a toolchain for. One small tool
-# keeps the job fast; the point is that setup-block installs block, restores
-# $BLOCK_HOME, and that "block sync" then "block exec" work on every runner.
-#
-# Every platform the test matrix runs on is locked, because "block sync"
-# installs what block.lock names and nothing else.
-platforms = ["linux/amd64", "linux/arm64", "darwin/amd64", "darwin/arm64"]
+# The project the integration test installs a toolchain for. CometBFT is the
+# one tool the registry has for every runner in the matrix — Linux, macOS and
+# Windows, on both architectures — and it is small, so the job stays fast.
+# The point is that setup-block installs block, restores $BLOCK_HOME, and that
+# "block sync" then "block exec" work on every runner.
+platforms = [
+  "linux/amd64",
+  "linux/arm64",
+  "darwin/amd64",
+  "darwin/arm64",
+  "windows/amd64",
+  "windows/arm64",
+]
 
 [tools]
-foundry = "1.7"
+cometbft = "1"

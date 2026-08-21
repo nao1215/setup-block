@@ -3,28 +3,38 @@
 version = 1
 
 [[tools]]
-name = "foundry"
-constraint = "1.7"
-version = "1.7.1"
-bin = ["forge", "cast", "anvil", "chisel"]
+name = "cometbft"
+constraint = "1"
+version = "1.0.1"
+bin = ["cometbft"]
 strip_components = 0
 
 [[tools.artifacts]]
 platform = "darwin/amd64"
-url = "https://github.com/foundry-rs/foundry/releases/download/v1.7.1/foundry_v1.7.1_darwin_amd64.tar.gz"
-sha256 = "c7fd1f5c9bf718d30b5cb6fc94eac605039de2aa50afc4c545a4dddc1e411acb"
+url = "https://github.com/cometbft/cometbft/releases/download/v1.0.1/cometbft_1.0.1_darwin_amd64.tar.gz"
+sha256 = "f15e8f72c76aa11f2129ca605856833411b2f2b4593691d0768d102a27b0e740"
 
 [[tools.artifacts]]
 platform = "darwin/arm64"
-url = "https://github.com/foundry-rs/foundry/releases/download/v1.7.1/foundry_v1.7.1_darwin_arm64.tar.gz"
-sha256 = "eacdc67718fac857cad9e19c7f6729dd80de731d09df81856391d093cfcab547"
+url = "https://github.com/cometbft/cometbft/releases/download/v1.0.1/cometbft_1.0.1_darwin_arm64.tar.gz"
+sha256 = "846221698d4717306967ceb1d2f4ef54ef0cd597a8db388efee945d1c5b9d21e"
 
 [[tools.artifacts]]
 platform = "linux/amd64"
-url = "https://github.com/foundry-rs/foundry/releases/download/v1.7.1/foundry_v1.7.1_linux_amd64.tar.gz"
-sha256 = "cf7e688ed0c4c48adffca788b496076e31060b67ac5afe1e43dbb5499c20c88b"
+url = "https://github.com/cometbft/cometbft/releases/download/v1.0.1/cometbft_1.0.1_linux_amd64.tar.gz"
+sha256 = "9cb91ec0be0c47b69c7ce254665d006c5d9656ba5acae2d6fd836d4d9bcba61a"
 
 [[tools.artifacts]]
 platform = "linux/arm64"
-url = "https://github.com/foundry-rs/foundry/releases/download/v1.7.1/foundry_v1.7.1_linux_arm64.tar.gz"
-sha256 = "c8fe8fa09ae3aba2c81b510c6f9da3a9d468029b9580e690b245b3f0aea687ae"
+url = "https://github.com/cometbft/cometbft/releases/download/v1.0.1/cometbft_1.0.1_linux_arm64.tar.gz"
+sha256 = "33c987bb871484b7dbd6b6dce24bcabc4e695204fe0be2499993bf6946bd1d78"
+
+[[tools.artifacts]]
+platform = "windows/amd64"
+url = "https://github.com/cometbft/cometbft/releases/download/v1.0.1/cometbft_1.0.1_windows_amd64.tar.gz"
+sha256 = "ee5e1142346f74cd7c686e04f89a8af489e983f9ed8d4172418ea5b3f218218a"
+
+[[tools.artifacts]]
+platform = "windows/arm64"
+url = "https://github.com/cometbft/cometbft/releases/download/v1.0.1/cometbft_1.0.1_windows_arm64.tar.gz"
+sha256 = "8a379f6fdbd98e7b33a3301ec3a4883412a6a2dc23523fc066d4e4d04c965eec"
