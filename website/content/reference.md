@@ -1,6 +1,7 @@
 ---
 title: Reference
 description: "Every input and output of the setup-block action, and how the toolchain cache is keyed."
+toc: true
 ---
 
 ## Inputs
