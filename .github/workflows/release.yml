@@ -1,0 +1,46 @@
+name: Release
+
+# Workflows pin `nao1215/setup-block@v0`, so that tag has to keep pointing at
+# the newest v0.x.y. Moving it by hand is a step that is easy to forget and
+# invisible when it is: everyone pinned to the major tag silently stays on the
+# old action. Pushing a version tag moves it here instead.
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: write
+
+jobs:
+  major-tag:
+    name: Move the major tag to ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Point the major tag at this release
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          major="${TAG%%.*}"
+          echo "moving $major to $TAG"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f -a "$major" -m "$TAG"
+          git push -f origin "refs/tags/$major"
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --generate-notes

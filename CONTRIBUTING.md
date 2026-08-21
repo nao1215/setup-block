@@ -48,6 +48,25 @@ make website-serve
 - CI has to be green. If a check is wrong, fix the check in the same pull
   request and say why.
 
+## Releasing
+Pushing a `vX.Y.Z` tag is the whole release. The **Release** workflow moves the
+major tag — the one workflows pin as `nao1215/setup-block@v0` — to that commit
+and publishes the GitHub release with generated notes.
+
+Before tagging, move the `Unreleased` heading in
+[CHANGELOG.md](./CHANGELOG.md) to the new version with today's date and update
+the link references at the bottom, in a pull request of its own. Then:
+
+```shell
+git switch main && git pull
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+The integration job only runs when
+[block](https://github.com/nao1215/block) has a published release, since there
+is nothing to install otherwise. A release of this action should be cut with
+that job green, not skipped.
+
 ## Code of conduct
 
 [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md). It is one sentence.
