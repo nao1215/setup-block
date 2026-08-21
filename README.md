@@ -1,23 +1,23 @@
-# setup-block
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-GitHub Action to install the [block](https://github.com/nao1215/block) CLI and
-restore its toolchain cache.
+[![Test](https://github.com/nao1215/setup-block/actions/workflows/test.yml/badge.svg)](https://github.com/nao1215/setup-block/actions/workflows/test.yml)
+[![Website](https://github.com/nao1215/setup-block/actions/workflows/website.yml/badge.svg)](https://github.com/nao1215/setup-block/actions/workflows/website.yml)
+![GitHub](https://img.shields.io/github/license/nao1215/setup-block)
 
-`block` pins the blockchain CLI tools a project depends on — Foundry, geth,
-Lighthouse, Agave, Hermes and friends — so a repository gets the same
-toolchain on every machine and in CI. This action is the thin CI half of that:
-it installs a prebuilt `block` binary (no Go setup, no `go build`), caches
-`$BLOCK_HOME` on the lockfile, and optionally runs `block sync` so the tools
-are ready for the steps that follow.
+<p align="center">
+  <img src="./doc/img/setup-block-logo.png" alt="setup-block logo" width="460" />
+</p>
 
-Linux and macOS runners, amd64 and arm64. block ships no Windows builds, and
-neither do most of the tools it installs, so a Windows runner is refused with
-a clear message rather than a download error.
+GitHub Action that installs the [block](https://github.com/nao1215/block) CLI and restores its toolchain cache. block pins the blockchain CLI tools a project depends on — Foundry, geth, Lighthouse, Agave, Hermes and friends — so a repository gets the same toolchain on every machine and in CI. This action is the thin CI half of that: it installs a prebuilt `block` binary (no Go setup, no `go build`), caches `$BLOCK_HOME` on the lockfile, and optionally runs `block sync` so the tools are ready for the steps that follow.
+
+Documentation: https://nao1215.github.io/setup-block/
 
 ## Quick start
 
 ```yaml
-- uses: actions/checkout@v4
+- uses: actions/checkout@v6
 - uses: nao1215/setup-block@v0
   with:
     sync: "true"
@@ -27,13 +27,24 @@ a clear message rather than a download error.
 That is the whole CI story: the toolchain in `block.lock` is installed, and
 `block exec` runs your tools with it on `PATH`.
 
-Without `sync`, the action only installs the CLI:
+Without `sync`, the action only installs the CLI and leaves the timing to you:
 
 ```yaml
 - uses: nao1215/setup-block@v0
 - run: block sync
 - run: block exec make test
 ```
+
+The [cookbook](./doc/cookbook.md) has the rest — matrices across runners,
+monorepo subdirectories, cache control, signature and provenance verification,
+guarding the lockfile in a pull request, and reading a failure.
+
+## Supported runners
+
+Linux, macOS and Windows, on x86-64 and arm64 — every platform block itself
+publishes a build for. Whether a given *tool* has a build for the runner you
+chose is a separate question, answered by `block.lock`; block reports a
+platform its lockfile does not cover rather than substituting something else.
 
 ## Pin a version
 
@@ -124,12 +135,39 @@ change to `block.lock` that belongs in a pull request, which is what
 - run: block lock --check   # exit 2 when a newer version is available
 ```
 
-## Documentation
+## Related
 
 - [setup-block documentation](https://nao1215.github.io/setup-block/)
+- [Cookbook](./doc/cookbook.md) — workflow steps indexed by task
 - [block](https://github.com/nao1215/block) — the CLI this action installs
 - [block-registry](https://github.com/nao1215/block-registry) — the tools block can install
 
-## License
+## Contributing
 
-[MIT](./LICENSE)
+Issues and pull requests are welcome; see [CONTRIBUTING.md](./CONTRIBUTING.md).
+Contributions are not only about code: a GitHub Star also motivates
+development.
+
+## LICENSE
+
+The setup-block project is licensed under the terms of [MIT LICENSE](./LICENSE).
+
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://debimate.jp/"><img src="https://avatars.githubusercontent.com/u/22737008?v=4?s=75" width="75px;" alt="CHIKAMATSU Naohiro"/><br /><sub><b>CHIKAMATSU Naohiro</b></sub></a><br /><a href="https://github.com/nao1215/setup-block/commits?author=nao1215" title="Code">💻</a> <a href="https://github.com/nao1215/setup-block/commits?author=nao1215" title="Documentation">📖</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
