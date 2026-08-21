@@ -1,0 +1,43 @@
+# Configuration for the setup-block documentation website (GitHub Pages).
+# The site is small on purpose: this repository is one composite action, and
+# its README is the reference. The pages exist so the action is discoverable
+# next to block's own documentation.
+baseURL = "https://nao1215.github.io/setup-block/"
+locale = "en-us"
+title = "setup-block"
+disableKinds = ["taxonomy", "term", "rss"]
+enableRobotsTXT = true
+timeZone = "UTC"
+
+[params]
+tagline = "Install the block CLI in GitHub Actions"
+description = "GitHub Action that installs the block CLI, caches $BLOCK_HOME on your lockfile, and syncs the blockchain toolchain a project pinned."
+repo = "https://github.com/nao1215/setup-block"
+
+[markup.highlight]
+noClasses = false
+style = "github"
+
+[markup.tableOfContents]
+startLevel = 2
+endLevel = 3
+
+[[menus.main]]
+name = "Usage"
+pageRef = "/"
+weight = 10
+
+[[menus.main]]
+name = "Reference"
+pageRef = "/reference"
+weight = 20
+
+[[menus.main]]
+name = "block"
+url = "https://nao1215.github.io/block/"
+weight = 30
+
+[[menus.main]]
+name = "GitHub"
+url = "https://github.com/nao1215/setup-block"
+weight = 40

@@ -1,0 +1,105 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # Static checks — these always run.
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Run ShellCheck
+        # -x lets ShellCheck follow the sourced install.sh from version_test.sh.
+        run: shellcheck -x scripts/install.sh scripts/version_test.sh
+
+      - name: Run actionlint
+        uses: raven-actions/actionlint@v2
+
+      - name: Test the install script's helpers
+        run: bash scripts/version_test.sh
+
+  # Does a released block exist yet? Until the first release the integration
+  # job has nothing to install, and a red badge would say something untrue.
+  released:
+    name: Check for a published release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      exists: ${{ steps.check.outputs.exists }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view --repo nao1215/block --json tagName >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::nao1215/block has no published release yet; skipping the install job."
+          fi
+
+  # Integration test: install block on every supported runner, restore the
+  # toolchain cache, and prove the installed toolchain actually runs.
+  install:
+    name: Install (${{ matrix.os }})
+    needs: released
+    if: needs.released.outputs.exists == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup block
+        id: setup
+        uses: ./
+        with:
+          version: latest
+          working-directory: testdata/project
+          sync: "true"
+
+      - name: Print resolved outputs
+        shell: bash
+        run: |
+          echo "version=${{ steps.setup.outputs.version }}"
+          echo "bin-path=${{ steps.setup.outputs.bin-path }}"
+          echo "install-dir=${{ steps.setup.outputs.install-dir }}"
+          echo "block-home=${{ steps.setup.outputs.block-home }}"
+          echo "cache-hit=${{ steps.setup.outputs.cache-hit }}"
+
+      - name: block is on PATH and BLOCK_HOME is exported
+        shell: bash
+        run: |
+          block version
+          test -n "$BLOCK_HOME"
+          test "$BLOCK_HOME" = "${{ steps.setup.outputs.block-home }}"
+
+      - name: The synced toolchain runs
+        shell: bash
+        working-directory: testdata/project
+        run: block exec forge --version
+
+      - name: Syncing again is a cache hit and changes nothing
+        shell: bash
+        working-directory: testdata/project
+        run: |
+          block sync
+          git diff --exit-code block.lock

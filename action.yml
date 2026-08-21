@@ -1,0 +1,110 @@
+name: "Setup block"
+description: "Install the block CLI, cache $BLOCK_HOME, and optionally sync the project's blockchain toolchain."
+author: "CHIKAMATSU Naohiro"
+
+branding:
+  icon: "lock"
+  color: "blue"
+
+inputs:
+  version:
+    description: 'Version of block to install (e.g. "v0.1.0" or "0.1.0"). Use "latest" to install the most recent release.'
+    required: false
+    default: "latest"
+  github-token:
+    description: "GitHub token used for API requests and downloads to avoid rate limiting. It is also exported as GITHUB_TOKEN for block lock/sync."
+    required: false
+    default: ${{ github.token }}
+  install-dir:
+    description: "Directory to install the block binary into. Defaults to $HOME/.block/bin."
+    required: false
+    default: ""
+  verify-checksum:
+    description: 'Verify the downloaded archive against checksums.txt (SHA-256). Set to "false" to skip.'
+    required: false
+    default: "true"
+  verify-attestation:
+    description: 'Verify the archive build provenance with "gh attestation verify". Requires the gh CLI. Opt-in.'
+    required: false
+    default: "false"
+  verify-signature:
+    description: 'Verify checksums.txt with its cosign bundle. Requires cosign on PATH (sigstore/cosign-installer). Opt-in.'
+    required: false
+    default: "false"
+  add-to-path:
+    description: 'Add the install directory to PATH for subsequent steps. Set to "false" to only expose the outputs.'
+    required: false
+    default: "true"
+  block-home:
+    description: "Directory block stores downloaded artifacts and installed tools in ($BLOCK_HOME). Defaults to the runner's ~/.local/share/block."
+    required: false
+    default: ""
+  cache:
+    description: 'Cache $BLOCK_HOME across runs, keyed by the project block.lock. Set to "false" to disable.'
+    required: false
+    default: "true"
+  working-directory:
+    description: "Directory holding block.toml and block.lock. Used for the cache key and for sync."
+    required: false
+    default: "."
+  sync:
+    description: 'Run "block sync" after installing, so later steps can call "block exec". Opt-in.'
+    required: false
+    default: "false"
+
+outputs:
+  version:
+    description: "The resolved version of block that was installed (e.g. v0.1.0)."
+    value: ${{ steps.install.outputs.version }}
+  bin-path:
+    description: "Absolute path to the installed block binary."
+    value: ${{ steps.install.outputs.bin-path }}
+  install-dir:
+    description: "Directory the block binary was installed into (added to PATH)."
+    value: ${{ steps.install.outputs.install-dir }}
+  block-home:
+    description: "The $BLOCK_HOME directory exported for subsequent steps."
+    value: ${{ steps.install.outputs.block-home }}
+  cache-hit:
+    description: '"true" when the toolchain cache was restored exactly, "false" otherwise. Empty when caching is disabled.'
+    value: ${{ steps.cache.outputs.cache-hit }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: install
+      shell: bash
+      env:
+        INPUT_VERSION: ${{ inputs.version }}
+        INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
+        INPUT_INSTALL_DIR: ${{ inputs.install-dir }}
+        INPUT_VERIFY_CHECKSUM: ${{ inputs.verify-checksum }}
+        INPUT_VERIFY_ATTESTATION: ${{ inputs.verify-attestation }}
+        INPUT_VERIFY_SIGNATURE: ${{ inputs.verify-signature }}
+        INPUT_ADD_TO_PATH: ${{ inputs.add-to-path }}
+        INPUT_BLOCK_HOME: ${{ inputs.block-home }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        RUNNER_OS: ${{ runner.os }}
+        RUNNER_ARCH: ${{ runner.arch }}
+      run: bash "${GITHUB_ACTION_PATH}/scripts/install.sh"
+
+    # Artifacts are content-addressed and installs are per version, so the
+    # lockfile is the whole key: the same block.lock always wants the same
+    # store, and a changed one wants a different one.
+    - id: cache
+      if: inputs.cache == 'true'
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.install.outputs.block-home }}
+        key: block-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles(format('{0}/block.lock', inputs.working-directory)) }}
+        # No restore-keys: a partial store from another lockfile would be
+        # re-verified and mostly discarded, and block re-downloads what it
+        # needs anyway.
+
+    - id: sync
+      if: inputs.sync == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: block sync
