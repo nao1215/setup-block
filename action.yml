@@ -93,7 +93,7 @@ runs:
     # store, and a changed one wants a different one.
     - id: cache
       if: inputs.cache == 'true'
-      uses: actions/cache@v4
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
       with:
         path: ${{ steps.install.outputs.block-home }}
         key: block-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles(format('{0}/block.lock', inputs.working-directory)) }}

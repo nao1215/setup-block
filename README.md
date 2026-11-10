@@ -3,6 +3,7 @@
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![Test](https://github.com/nao1215/setup-block/actions/workflows/test.yml/badge.svg)](https://github.com/nao1215/setup-block/actions/workflows/test.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/nao1215/setup-block/badge)](https://scorecard.dev/viewer/?uri=github.com/nao1215/setup-block)
 [![Website](https://github.com/nao1215/setup-block/actions/workflows/website.yml/badge.svg)](https://github.com/nao1215/setup-block/actions/workflows/website.yml)
 ![GitHub](https://img.shields.io/github/license/nao1215/setup-block)
 
