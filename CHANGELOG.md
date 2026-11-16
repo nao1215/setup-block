@@ -11,6 +11,10 @@ action itself to stay still.
 
 ## [Unreleased]
 
+### Changed
+
+- CI scans the repository with Trivy (dependency vulnerabilities, committed secrets and misconfigurations) on every pull request and daily.
+
 ## [0.1.0] - 2026-08-22
 
 The first release, alongside [block v0.1.0](https://github.com/nao1215/block/releases/tag/v0.1.0).

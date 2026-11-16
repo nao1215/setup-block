@@ -5,6 +5,7 @@
 [![Test](https://github.com/nao1215/setup-block/actions/workflows/test.yml/badge.svg)](https://github.com/nao1215/setup-block/actions/workflows/test.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/nao1215/setup-block/badge)](https://scorecard.dev/viewer/?uri=github.com/nao1215/setup-block)
 [![Website](https://github.com/nao1215/setup-block/actions/workflows/website.yml/badge.svg)](https://github.com/nao1215/setup-block/actions/workflows/website.yml)
+[![Trivy](https://github.com/nao1215/setup-block/actions/workflows/trivy.yml/badge.svg)](https://github.com/nao1215/setup-block/actions/workflows/trivy.yml)
 ![GitHub](https://img.shields.io/github/license/nao1215/setup-block)
 
 <p align="center">
