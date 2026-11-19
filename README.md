@@ -57,6 +57,10 @@ platform its lockfile does not cover rather than substituting something else.
     version: v0.8.0        # "0.8.0" works too; "latest" is the default
 ```
 
+The version must be `latest`, `vX.Y.Z` or `X.Y.Z` (a pre-release suffix such as
+`-rc.1` is allowed). Anything else, such as `V0.8.0` or `0.8`, fails the step
+before any download.
+
 ## Caching
 
 `$BLOCK_HOME` holds the downloaded artifacts and the unpacked tools. The
@@ -144,6 +148,13 @@ change to `block.lock` that belongs in a pull request, which is what
 - [Cookbook](./doc/cookbook.md) — workflow steps indexed by task
 - [block](https://github.com/nao1215/block) — the CLI this action installs
 - [block-registry](https://github.com/nao1215/block-registry) — the tools block can install
+
+## Testing
+
+| Technique | Bug class caught here |
+|---|---|
+| [Version input boundaries](scripts/version_test.sh) | `latest`, empty, whitespace, `v`-less and pre-release inputs resolving to the wrong tag, malformed versions reaching the download URL, a wrong `$BLOCK_HOME` default and a wrong asset name for a runner |
+| [Real-runner installs](.github/workflows/test.yml) | Asset naming, extraction, checksum, cache and `PATH` breakage on Linux, macOS and Windows (amd64 / arm64), a synced toolchain or its shims not running, pinned and `v`-less versions installing something else, and invalid versions or a missing release passing silently |
 
 ## Contributing
 
