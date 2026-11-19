@@ -5,26 +5,42 @@ import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-# The test workflow runs this action as `uses: ./`, and action.yml calls
-# actions/cache. The generator cannot follow a `./` action, but the runner
-# still demands a lockfile pin for every action it runs, nested ones included.
-# So action.yml is scanned as one more file next to the workflows, which
-# records its actions/cache pin, and the `./` references only warn.
-ACTION_FILE = 'action.yml'
 
 
-def generator_args(originals):
-    return ['--ignore-local-actions',
-            *sorted(path.relative_to(ROOT).as_posix() for path in originals)]
+USES = r'^\s*(?:-\s*)?uses:\s*[\'\"]?([^\s\'\"#]+)'
+
+
+def same_repo_action_file(raw):
+    """Path of the action.yml a same-repository `uses: $/...` reference runs."""
+    directory = ROOT/raw[2:]
+    for name in ('action.yml', 'action.yaml'):
+        if (directory/name).exists():
+            return directory/name
+    raise ValueError(f'{raw}: no action.yml in {directory}')
 
 
 def workflow_refs(originals):
-    """Collect repository-level action keys; action subpaths share one pin."""
+    """Collect repository-level action keys; action subpaths share one pin.
+
+    A `uses: $/` step runs this repository's own action at the workflow's
+    commit. gh-actions-lock follows it and records the actions that action.yml
+    uses under the calling workflow, because the runner demands a pin for
+    each of them; so they are expected there too.
+    """
     result = {}
     for path, data in originals.items():
         refs = set()
-        for raw in re.findall(r'^\s*(?:-\s*)?uses:\s*[\'\"]?([^\s\'\"#]+)', data.decode(), re.M):
+        pending = re.findall(USES, data.decode(), re.M)
+        followed = set()
+        while pending:
+            raw = pending.pop()
             if raw.startswith('./'):
+                continue
+            if raw.startswith('$/'):
+                action = same_repo_action_file(raw)
+                if action not in followed:
+                    followed.add(action)
+                    pending.extend(re.findall(USES, action.read_text(), re.M))
                 continue
             # Reusable workflows are outside the caller's action lockfile, and
             # the SLSA generator only accepts a tag reference.
@@ -94,24 +110,23 @@ def retain_sha_keys(text, expected):
 
 def main(check=False):
     originals = {path: path.read_bytes() for path in (ROOT/'.github/workflows').glob('*.y*ml')}
-    action_file = ROOT/ACTION_FILE
-    if action_file.exists():
-        originals[action_file] = action_file.read_bytes()
     expected = workflow_refs(originals)
     lock = ROOT/'.github/workflows/actions.lock'
     if check:
         check_exact_refs(lock.read_text(), expected)
         print(f'exact SHA lockfile coverage: {len(expected)} workflows')
         return
+    # The generator rewrites the SHA pins of in-repo action files to tags as
+    # well, so action.yml is restored together with the workflows.
+    actions = {path: path.read_bytes() for path in ROOT.glob('action.y*ml')}
     try:
-        subprocess.run(['gh', 'actions-lock', *generator_args(originals)], cwd=ROOT, check=True)
+        subprocess.run(['gh', 'actions-lock'], cwd=ROOT, check=True)
     finally:
-        # v0.4.1 renders tags for SHA inputs; Scorecard still reads workflows,
-        # and action.yml keeps its SHA pin too.
-        for path, data in originals.items():
+        # v0.4.1 renders tags for SHA inputs; Scorecard still reads workflows.
+        for path, data in {**originals, **actions}.items():
             path.write_bytes(data)
     lock.write_text(retain_sha_keys(lock.read_text(), expected))
-    subprocess.run(['gh', 'actions-lock', '--verify', *generator_args(originals)], cwd=ROOT, check=True)
+    subprocess.run(['gh', 'actions-lock', '--verify'], cwd=ROOT, check=True)
 
 
 if __name__ == '__main__':

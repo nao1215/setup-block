@@ -30,7 +30,4 @@ jobs:
         run: |
           gh extension install github/gh-actions-lock --pin v0.4.1
           python3 scripts/lock_actions.py --check
-          # test.yml runs this action as `uses: ./`, which gh-actions-lock
-          # cannot follow, so action.yml is checked as one more file; that is
-          # where the lockfile records the pin of its actions/cache step.
-          gh actions-lock --verify --ignore-local-actions .github/workflows/*.yml action.yml
+          gh actions-lock --verify

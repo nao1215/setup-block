@@ -57,6 +57,9 @@ jobs:
 
   # Integration test: install block on every supported runner, restore the
   # toolchain cache, and prove the installed toolchain actually runs.
+  # `uses: $/` runs this repository's action at the workflow's commit, like
+  # `./`, but gh-actions-lock can follow it, so the actions/cache step of
+  # action.yml gets the lockfile pin the runner demands.
   install:
     name: Install (${{ matrix.os }})
     needs: released
@@ -74,7 +77,7 @@ jobs:
 
       - name: Setup block
         id: setup
-        uses: ./
+        uses: $/
         with:
           version: latest
           working-directory: testdata/project
