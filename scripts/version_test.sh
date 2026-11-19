@@ -3,8 +3,8 @@
 # version_test.sh — check the pure helpers in install.sh: version
 # normalization and the $BLOCK_HOME default.
 #
-# "latest" needs the GitHub API and is covered by the integration job in
-# .github/workflows/test.yml.
+# "latest" is checked against canned API responses here, and against the real
+# API by the integration job in .github/workflows/test.yml.
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -44,6 +44,78 @@ check_home() {
 check_version "v0.1.0" "v0.1.0" "0.1.0"
 check_version "0.1.0"  "v0.1.0" "0.1.0"
 check_version " 0.1.0" "v0.1.0" "0.1.0" # surrounding whitespace is trimmed
+check_version $'v0.8.0\n' "v0.8.0" "0.8.0" # a trailing newline from a multi-line YAML value
+check_version $'\tv0.8.0 ' "v0.8.0" "0.8.0"
+check_version "v10.20.30" "v10.20.30" "10.20.30" # multi-digit components
+check_version "v1.0.0-rc.1" "v1.0.0-rc.1" "1.0.0-rc.1" # pre-release suffix is kept
+check_version "1.0.0-rc.1"  "v1.0.0-rc.1" "1.0.0-rc.1"
+
+# check_latest feeds resolve_version a canned API response, so any input that
+# means "latest" must come out as the tag in that response.
+check_latest() {
+  local input="$1" body="$2" want="$3"
+  INPUT_VERSION="$input"
+  TAG="" NUM_VERSION=""
+  LATEST_BODY="$body"
+  gh_curl() { printf '%s\n' "$LATEST_BODY"; }
+  resolve_version
+  if [ "$TAG" != "$want" ] || [ "$NUM_VERSION" != "${want#v}" ]; then
+    printf 'FAIL: latest %-8q -> TAG=%s NUM=%s (want %s)\n' "$input" "$TAG" "$NUM_VERSION" "$want"
+    failures=$((failures + 1))
+  else
+    printf 'ok:   latest %-8q -> TAG=%s\n' "$input" "$TAG"
+  fi
+  unset -f gh_curl
+}
+
+check_latest "latest" '{"url":"https://api.github.com/repos/nao1215/block/releases/1","tag_name":"v0.8.0","name":"v0.8.0"}' v0.8.0
+check_latest ""       '{"tag_name":"v0.8.0"}' v0.8.0 # the input left empty means latest
+check_latest "  "     '{"tag_name":"v0.8.0"}' v0.8.0 # whitespace only means latest too
+# A release lists every asset, so the API response outgrows a pipe buffer; the
+# tag must come out without a pipe whose reader stops early.
+check_latest "latest" "$(printf '{\n  "tag_name": "v0.8.0",\n  "assets": ["%s"]\n}\n' "$(head -c 300000 /dev/zero | tr '\0' 'x')")" v0.8.0
+
+# expect_failure NAME FRAGMENT INPUT [BODY]: resolve_version must stop with an
+# error naming FRAGMENT, without building a tag from the input. With BODY the
+# API answers it; without BODY any API call is itself a failure.
+expect_failure() {
+  local name="$1" frag="$2" input="$3" body="${4-}" out status
+  INPUT_VERSION="$input"
+  LATEST_BODY="$body"
+  if [ $# -ge 4 ]; then
+    gh_curl() { printf '%s\n' "$LATEST_BODY"; }
+  else
+    gh_curl() { printf 'gh_curl must not be called for %s\n' "$INPUT_VERSION" >&2; return 1; }
+  fi
+  set +e
+  out="$( (resolve_version) 2>&1)"
+  status=$?
+  set -e
+  unset -f gh_curl
+  case "$status:$out" in
+    0:*)
+      printf 'FAIL: %s was accepted\n' "$name"
+      failures=$((failures + 1))
+      ;;
+    *"$frag"*)
+      printf 'ok:   %s rejected\n' "$name"
+      ;;
+    *)
+      printf 'FAIL: %s failed without naming %s: %s\n' "$name" "$frag" "$out"
+      failures=$((failures + 1))
+      ;;
+  esac
+}
+
+expect_failure "latest without tag_name" "could not determine" "latest" '{"message":"Not Found"}'
+expect_failure "vv0.8.0 (doubled prefix)" "invalid version" "vv0.8.0"
+expect_failure "V0.8.0 (upper-case prefix)" "invalid version" "V0.8.0"
+expect_failure "Latest (only the exact word means latest)" "invalid version" "Latest"
+expect_failure "v (prefix without a version)" "invalid version" "v"
+expect_failure "0.8 (missing patch)" "invalid version" "0.8"
+expect_failure "0.8.0.0 (extra component)" "invalid version" "0.8.0.0"
+expect_failure "v0.8.0 beta (inner word)" "invalid version" "v0.8.0 beta"
+expect_failure "0.8.0/../x (path segments)" "invalid version" "0.8.0/../x"
 
 # The default must match block's own, or a cached store would be restored to a
 # directory block never reads.
