@@ -11,6 +11,8 @@ action itself to stay still.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-19
+
 ### Fixed
 
 - A malformed `version` (`vv0.8.0`, `V0.8.0`, `Latest`, `0.8`) now fails the step before any download with a message naming the accepted forms, instead of failing later as a 404 for an asset name built from it.
@@ -58,5 +60,6 @@ The first release, alongside [block v0.1.0](https://github.com/nao1215/block/rel
   syncs a real toolchain, and proves it runs through `block exec` and through
   the shims.
 
-[Unreleased]: https://github.com/nao1215/setup-block/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/nao1215/setup-block/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/nao1215/setup-block/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/nao1215/setup-block/releases/tag/v0.1.0
