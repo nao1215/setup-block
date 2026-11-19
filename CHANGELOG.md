@@ -11,6 +11,10 @@ action itself to stay still.
 
 ## [Unreleased]
 
+### Fixed
+
+- A malformed `version` (`vv0.8.0`, `V0.8.0`, `Latest`, `0.8`) now fails the step before any download with a message naming the accepted forms, instead of failing later as a 404 for an asset name built from it.
+
 ### Changed
 
 - API calls and downloads retry five times with exponential backoff (1, 2, 4, 8 and 16 seconds) instead of three times two seconds apart, so a release asset host that answers 504 for half a minute no longer fails the step.
