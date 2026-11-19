@@ -1,11 +1,11 @@
-# Version updates arrive once a week, one pull request for all GitHub Actions.
+# Version updates arrive once a month, one pull request for all GitHub Actions.
 # Security updates are switched on in the repository settings, not here.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       github-actions:
         applies-to: version-updates

@@ -55,5 +55,5 @@ only when you change it:
 ```yaml
 - uses: nao1215/setup-block@<sha>
   with:
-    version: v0.1.0
+    version: v0.8.0
 ```

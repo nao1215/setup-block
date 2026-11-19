@@ -13,7 +13,10 @@ action itself to stay still.
 
 ### Changed
 
-- CI scans the repository with Trivy (dependency vulnerabilities, committed secrets and misconfigurations) on every pull request and daily.
+- API calls and downloads retry five times with exponential backoff (1, 2, 4, 8 and 16 seconds) instead of three times two seconds apart, so a release asset host that answers 504 for half a minute no longer fails the step.
+- `checksums.txt` downloads while the archive does, saving a round trip on every install.
+- CI scans the repository with Trivy (dependency vulnerabilities, committed secrets and misconfigurations) on every pull request and daily, and with gitleaks for committed secrets.
+- Workflow actions, and the `actions/cache` step of `action.yml`, are recorded in `.github/workflows/actions.lock` and checked on every pull request. The tests run the action as `uses: $/` so the lockfile can follow it.
 
 ## [0.1.0] - 2026-08-22
 

@@ -66,7 +66,7 @@ The default is off, so this is what you get by writing nothing.
 ```yaml
 - uses: nao1215/setup-block@v0
   with:
-    version: v0.1.0        # "0.1.0" works too; "latest" is the default
+    version: v0.8.0        # "0.8.0" works too; "latest" is the default
 ```
 
 `latest` is fine for a repository that tracks block closely. Pin an exact
@@ -309,7 +309,7 @@ so install the toolchain inside the image instead — copying `block.toml` and
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl \
  && rm -rf /var/lib/apt/lists/*
-RUN curl -sSfL https://github.com/nao1215/block/releases/download/v0.1.0/block_0.1.0_linux_amd64.tar.gz \
+RUN curl -sSfL https://github.com/nao1215/block/releases/download/v0.8.0/block_0.8.0_linux_amd64.tar.gz \
   | tar xz -C /usr/local/bin block
 WORKDIR /src
 COPY block.toml block.lock ./

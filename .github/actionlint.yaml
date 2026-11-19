@@ -1,0 +1,8 @@
+# test.yml runs this repository's own action as `uses: $/`, the
+# same-repository form that runs it at the workflow's commit and lets
+# gh-actions-lock record the actions/cache step of action.yml. actionlint
+# does not know that form yet.
+paths:
+  .github/workflows/test.yml:
+    ignore:
+      - 'specifying action "\$/" in invalid format'
