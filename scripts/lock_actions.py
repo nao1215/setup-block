@@ -6,9 +6,16 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 # The test workflow runs this action as `uses: ./`, and action.yml calls
-# actions/cache. The lockfile cannot cover a local action, so the generator is
-# told to warn about it; action.yml pins actions/cache by full SHA itself.
-LOCAL_ACTION_ARGS = ['--ignore-local-actions']
+# actions/cache. The generator cannot follow a `./` action, but the runner
+# still demands a lockfile pin for every action it runs, nested ones included.
+# So action.yml is scanned as one more file next to the workflows, which
+# records its actions/cache pin, and the `./` references only warn.
+ACTION_FILE = 'action.yml'
+
+
+def generator_args(originals):
+    return ['--ignore-local-actions',
+            *sorted(path.relative_to(ROOT).as_posix() for path in originals)]
 
 
 def workflow_refs(originals):
@@ -87,22 +94,24 @@ def retain_sha_keys(text, expected):
 
 def main(check=False):
     originals = {path: path.read_bytes() for path in (ROOT/'.github/workflows').glob('*.y*ml')}
+    action_file = ROOT/ACTION_FILE
+    if action_file.exists():
+        originals[action_file] = action_file.read_bytes()
     expected = workflow_refs(originals)
     lock = ROOT/'.github/workflows/actions.lock'
     if check:
         check_exact_refs(lock.read_text(), expected)
         print(f'exact SHA lockfile coverage: {len(expected)} workflows')
         return
-    # The generator also rewrites in-repo action files; keep action.yml's SHA pin.
-    action_files = {path: path.read_bytes() for path in ROOT.glob('action.y*ml')}
     try:
-        subprocess.run(['gh', 'actions-lock', *LOCAL_ACTION_ARGS], cwd=ROOT, check=True)
+        subprocess.run(['gh', 'actions-lock', *generator_args(originals)], cwd=ROOT, check=True)
     finally:
-        # v0.4.1 renders tags for SHA inputs; Scorecard still reads workflows.
-        for path, data in {**originals, **action_files}.items():
+        # v0.4.1 renders tags for SHA inputs; Scorecard still reads workflows,
+        # and action.yml keeps its SHA pin too.
+        for path, data in originals.items():
             path.write_bytes(data)
     lock.write_text(retain_sha_keys(lock.read_text(), expected))
-    subprocess.run(['gh', 'actions-lock', '--verify', *LOCAL_ACTION_ARGS], cwd=ROOT, check=True)
+    subprocess.run(['gh', 'actions-lock', '--verify', *generator_args(originals)], cwd=ROOT, check=True)
 
 
 if __name__ == '__main__':

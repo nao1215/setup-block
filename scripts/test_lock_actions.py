@@ -28,6 +28,32 @@ class LockActionsTests(unittest.TestCase):
             self.assertIn(f"    'actions/checkout@{sha}':", lock.read_text())
             self.assertIn(f"        - 'actions/checkout@{sha}'", lock.read_text())
 
+    def test_action_file_is_scanned_and_keeps_its_sha_pin(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            workflows = root/'.github/workflows'; workflows.mkdir(parents=True)
+            workflow = workflows/'test.yml'
+            workflow.write_text('  uses: ./\n')
+            action = root/'action.yml'
+            sha = 'c'*40
+            original = f'      uses: actions/cache@{sha} # v6\n'
+            action.write_text(original)
+            lock = workflows/'actions.lock'
+            calls = []
+            def generate(args, **kwargs):
+                calls.append(args)
+                if '--verify' in args: return
+                action.write_text('      uses: actions/cache@v6\n')
+                lock.write_text("version: 'v0.0.3'\nworkflows:\n    '.github/workflows/test.yml': []\n    'action.yml':\n        - 'actions/cache@v6'\ndependencies:\n    'actions/cache@v6':\n        ref: 'v6'\n        commit: 'sha1-" + sha + "'\n")
+            with patch.object(lock_actions, 'ROOT', root), patch.object(lock_actions.subprocess, 'run', side_effect=generate):
+                lock_actions.main()
+            self.assertEqual(action.read_text(), original)
+            self.assertIn(f"    'actions/cache@{sha}':", lock.read_text())
+            for args in calls:
+                self.assertIn('--ignore-local-actions', args)
+                self.assertIn('action.yml', args)
+                self.assertIn('.github/workflows/test.yml', args)
+
     def test_tag_alias_is_not_exact_runtime_coverage(self):
         text = "version: 'v0.0.3'\nworkflows:\n    '.github/workflows/test.yml':\n        - 'actions/checkout@v7'\ndependencies:\n    'actions/checkout@v7':\n        ref: 'v7'\n        commit: 'sha1-" + 'a'*40 + "'\n        owner_id: 1\n        repo_id: 2\n"
         expected = {'.github/workflows/test.yml': {'actions/checkout@'+'a'*40}}
