@@ -33,6 +33,12 @@ bash scripts/version_test.sh
 installs block on every supported runner and proves the synced toolchain
 actually executes, using the tiny project under `testdata/project`.
 
+Every action a workflow uses is pinned by full commit SHA and recorded in
+`.github/workflows/actions.lock`. After editing a workflow, regenerate the
+lockfile with `make lock` (it needs `gh extension install github/gh-actions-lock`);
+do not run `gh actions-lock` directly, because it rewrites the SHA pins into
+tag pins. CI checks the lockfile with `python3 scripts/lock_actions.py --check`.
+
 The documentation site builds with Hugo:
 
 ```shell

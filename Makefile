@@ -1,4 +1,4 @@
-.PHONY: lint test logo website website-serve help
+.PHONY: lint test lock logo website website-serve help
 
 logo: ## Redraw doc/img from scripts/gen-logo.py (requires Python and Pillow)
 	python3 ./scripts/gen-logo.py
@@ -8,6 +8,9 @@ lint: ## Run ShellCheck over the install script and its tests
 
 test: ## Run the install script's helper tests
 	bash scripts/version_test.sh
+
+lock: ## Regenerate .github/workflows/actions.lock after editing a workflow (requires gh-actions-lock)
+	PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/lock_actions.py
 
 website: ## Build the documentation website into website/public (requires hugo)
 	cd website && hugo --gc --minify --cleanDestinationDir

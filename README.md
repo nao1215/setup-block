@@ -3,10 +3,11 @@
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![Test](https://github.com/nao1215/setup-block/actions/workflows/test.yml/badge.svg)](https://github.com/nao1215/setup-block/actions/workflows/test.yml)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/nao1215/setup-block/badge)](https://scorecard.dev/viewer/?uri=github.com/nao1215/setup-block)
 [![Website](https://github.com/nao1215/setup-block/actions/workflows/website.yml/badge.svg)](https://github.com/nao1215/setup-block/actions/workflows/website.yml)
+[![Gitleaks](https://github.com/nao1215/setup-block/actions/workflows/gitleaks.yml/badge.svg)](https://github.com/nao1215/setup-block/actions/workflows/gitleaks.yml)
 [![Trivy](https://github.com/nao1215/setup-block/actions/workflows/trivy.yml/badge.svg)](https://github.com/nao1215/setup-block/actions/workflows/trivy.yml)
-![GitHub](https://img.shields.io/github/license/nao1215/setup-block)
+[![License](https://img.shields.io/github/license/nao1215/setup-block)](./LICENSE)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/nao1215/setup-block/badge)](https://scorecard.dev/viewer/?uri=github.com/nao1215/setup-block)
 
 <p align="center">
   <img src="./doc/img/setup-block-logo.png" alt="setup-block logo" width="460" />
@@ -53,7 +54,7 @@ platform its lockfile does not cover rather than substituting something else.
 ```yaml
 - uses: nao1215/setup-block@v0
   with:
-    version: v0.1.0        # "0.1.0" works too; "latest" is the default
+    version: v0.8.0        # "0.8.0" works too; "latest" is the default
 ```
 
 ## Caching
@@ -97,7 +98,7 @@ archive itself.
 
 | Name | Default | Description |
 | --- | --- | --- |
-| `version` | `latest` | Version of block to install (`v0.1.0`, `0.1.0`, or `latest`). |
+| `version` | `latest` | Version of block to install (`v0.8.0`, `0.8.0`, or `latest`). |
 | `github-token` | `${{ github.token }}` | Token for API requests and downloads. Also exported as `GITHUB_TOKEN` for `block sync`. |
 | `install-dir` | `$HOME/.block/bin` | Where the `block` binary is installed. |
 | `verify-checksum` | `true` | Verify the archive against `checksums.txt`. |
@@ -113,7 +114,7 @@ archive itself.
 
 | Name | Description |
 | --- | --- |
-| `version` | The resolved version that was installed (e.g. `v0.1.0`). |
+| `version` | The resolved version that was installed (e.g. `v0.8.0`). |
 | `bin-path` | Absolute path to the installed `block` binary. |
 | `install-dir` | Directory the binary was installed into. |
 | `block-home` | The `$BLOCK_HOME` exported for later steps. |

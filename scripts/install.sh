@@ -9,9 +9,9 @@
 # PowerShell).
 #
 # Release artifacts are produced by block's goreleaser config, e.g.:
-#   block_0.1.0_linux_amd64.tar.gz
-#   block_0.1.0_darwin_arm64.tar.gz
-#   block_0.1.0_windows_amd64.zip
+#   block_0.8.0_linux_amd64.tar.gz
+#   block_0.8.0_darwin_arm64.tar.gz
+#   block_0.8.0_windows_amd64.zip
 #   checksums.txt
 #   checksums.txt.sigstore.json
 set -euo pipefail
@@ -44,13 +44,16 @@ set_env() {
 
 # curl wrapper that adds the GitHub token when available. Branching avoids
 # expanding a possibly-empty array under `set -u` on older bash (macOS 3.2).
+# Five retries without --retry-delay back off 1, 2, 4, 8 and 16 seconds: the
+# release asset host has returned 504 for longer than three tries two seconds
+# apart, failing a job on a download that worked a minute later.
 gh_curl() {
   if [ -n "${INPUT_GITHUB_TOKEN:-}" ]; then
-    curl --fail --silent --show-error --location --retry 3 --retry-delay 2 \
+    curl --fail --silent --show-error --location --retry 5 \
       -H "X-GitHub-Api-Version: 2022-11-28" \
       -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" "$@"
   else
-    curl --fail --silent --show-error --location --retry 3 --retry-delay 2 \
+    curl --fail --silent --show-error --location --retry 5 \
       -H "X-GitHub-Api-Version: 2022-11-28" "$@"
   fi
 }
@@ -74,7 +77,7 @@ detect_platform() {
 }
 
 # ---------------------------------------------------------------------------
-# Resolve the release tag (handles "latest", "v0.1.0" and "0.1.0").
+# Resolve the release tag (handles "latest", "v0.8.0" and "0.8.0").
 # Sets TAG (with leading v) and NUM_VERSION (without leading v).
 # ---------------------------------------------------------------------------
 resolve_version() {
@@ -254,13 +257,21 @@ main() {
   trap 'rm -rf "${workdir:-}"' EXIT
 
   local archive_path="${workdir}/${archive_name}"
+  local checksums_path="${workdir}/checksums.txt"
+  # checksums.txt is fetched while the archive downloads rather than after it:
+  # each download is a request and a redirect to the asset host, and waiting
+  # for one before starting the other added those round trips to every job.
+  local checksums_pid=""
+  if [ "${INPUT_VERIFY_CHECKSUM:-true}" = "true" ] || [ "${INPUT_VERIFY_SIGNATURE:-false}" = "true" ]; then
+    gh_curl -o "$checksums_path" "${base_url}/checksums.txt" &
+    checksums_pid=$!
+  fi
   log "Downloading ${base_url}/${archive_name}"
   gh_curl -o "$archive_path" "${base_url}/${archive_name}" \
     || die "failed to download ${archive_name}. Does release ${TAG} exist for ${OS}/${ARCH}?"
 
-  local checksums_path="${workdir}/checksums.txt"
-  if [ "${INPUT_VERIFY_CHECKSUM:-true}" = "true" ] || [ "${INPUT_VERIFY_SIGNATURE:-false}" = "true" ]; then
-    gh_curl -o "$checksums_path" "${base_url}/checksums.txt" \
+  if [ -n "$checksums_pid" ]; then
+    wait "$checksums_pid" \
       || die "checksums.txt could not be downloaded for ${TAG}"
   fi
   if [ "${INPUT_VERIFY_SIGNATURE:-false}" = "true" ]; then

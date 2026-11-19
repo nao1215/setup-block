@@ -8,7 +8,7 @@ toc: true
 
 | Name | Default | Description |
 | --- | --- | --- |
-| `version` | `latest` | Version of block to install (`v0.1.0`, `0.1.0`, or `latest`). |
+| `version` | `latest` | Version of block to install (`v0.8.0`, `0.8.0`, or `latest`). |
 | `github-token` | `${{ github.token }}` | Token for API requests and downloads. Also exported as `GITHUB_TOKEN` for `block sync`. |
 | `install-dir` | `$HOME/.block/bin` | Where the `block` binary is installed. |
 | `verify-checksum` | `true` | Verify the archive against `checksums.txt`. |
