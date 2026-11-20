@@ -13,7 +13,7 @@
   <img src="./doc/img/setup-block-logo.png" alt="setup-block logo" width="460" />
 </p>
 
-GitHub Action that installs the [block](https://github.com/nao1215/block) CLI and restores its toolchain cache. block pins the blockchain CLI tools a project depends on — Foundry, geth, Lighthouse, Agave, Hermes and friends — so a repository gets the same toolchain on every machine and in CI. This action is the thin CI half of that: it installs a prebuilt `block` binary (no Go setup, no `go build`), caches `$BLOCK_HOME` on the lockfile, and optionally runs `block sync` so the tools are ready for the steps that follow.
+GitHub Action that installs the [block](https://github.com/nao1215/block) CLI and restores its toolchain cache. block pins the blockchain CLI tools a project depends on, such as Foundry, geth, Lighthouse, Agave and Hermes, so every machine and CI get the same toolchain. The action downloads a prebuilt `block` binary (no Go setup), caches `$BLOCK_HOME` keyed by the lockfile, and can run `block sync` for the steps that follow.
 
 Documentation: https://nao1215.github.io/setup-block/
 
@@ -27,8 +27,8 @@ Documentation: https://nao1215.github.io/setup-block/
 - run: block exec forge test
 ```
 
-That is the whole CI story: the toolchain in `block.lock` is installed, and
-`block exec` runs your tools with it on `PATH`.
+This installs the toolchain in `block.lock`, and `block exec` runs your tools
+with it on `PATH`.
 
 Without `sync`, the action only installs the CLI and leaves the timing to you:
 
@@ -38,16 +38,16 @@ Without `sync`, the action only installs the CLI and leaves the timing to you:
 - run: block exec make test
 ```
 
-The [cookbook](./doc/cookbook.md) has the rest — matrices across runners,
-monorepo subdirectories, cache control, signature and provenance verification,
-guarding the lockfile in a pull request, and reading a failure.
+The [cookbook](./doc/cookbook.md) covers matrices, monorepo subdirectories,
+cache control, signature and provenance checks, guarding the lockfile, and
+reading a failure.
 
 ## Supported runners
 
-Linux, macOS and Windows, on x86-64 and arm64 — every platform block itself
-publishes a build for. Whether a given *tool* has a build for the runner you
-chose is a separate question, answered by `block.lock`; block reports a
-platform its lockfile does not cover rather than substituting something else.
+Linux, macOS and Windows, on x86-64 and arm64, which is every platform block
+publishes a build for. Whether each tool has a build for the runner depends on
+`block.lock`; block reports a platform the lockfile does not cover instead of
+substituting something else.
 
 ## Pin a version
 
@@ -74,11 +74,8 @@ changed re-uses the same store instead of downloading Foundry again:
     sync: "true"
 ```
 
-The cache key is the runner OS, its architecture and the hash of that
-directory's `block.lock`. There are no partial-restore keys on purpose: block
-verifies every artifact against the lockfile anyway, and a store restored from
-a different lockfile would be mostly discarded. Turn it off with
-`cache: "false"` if your workflow manages `$BLOCK_HOME` itself.
+The key is the runner OS, its architecture and the hash of that directory's
+`block.lock`. [How the key works](https://nao1215.github.io/setup-block/reference/#the-cache-key).
 
 ## Supply-chain checks
 
@@ -93,10 +90,7 @@ stronger checks are available:
     verify-attestation: "true"   # gh attestation verify (needs the gh CLI)
 ```
 
-`verify-signature` checks the cosign bundle block publishes for
-`checksums.txt`, which transitively covers every artifact listed in it.
-`verify-attestation` checks the build provenance GitHub recorded for the
-archive itself.
+Details are in the [reference](https://nao1215.github.io/setup-block/reference/#supply-chain-checks).
 
 ## Inputs
 
@@ -126,16 +120,11 @@ archive itself.
 
 ## What this action does not do
 
-It installs `block` and gets out of the way. It never resolves versions, never
-writes `block.lock`, and never installs a tool the lockfile does not name —
-those are `block`'s own guarantees, and CI is exactly where they matter:
-
-> `block sync` never resolves. `block exec` never installs. `block lock` is
-> the only operation that can move a pin.
-
-So there is no "update the toolchain in CI" input here. Moving a pin is a
-change to `block.lock` that belongs in a pull request, which is what
-`block lock --check` in a scheduled job is for:
+It never resolves versions, writes `block.lock`, or installs a tool the
+lockfile does not name. `block sync` never resolves, and `block lock` is the
+only command that moves a pin, so there is no input for updating the toolchain
+in CI. A pin change belongs in a pull request; a scheduled job can report when
+one is due:
 
 ```yaml
 - uses: nao1215/setup-block@v0
@@ -145,9 +134,9 @@ change to `block.lock` that belongs in a pull request, which is what
 ## Related
 
 - [setup-block documentation](https://nao1215.github.io/setup-block/)
-- [Cookbook](./doc/cookbook.md) — workflow steps indexed by task
-- [block](https://github.com/nao1215/block) — the CLI this action installs
-- [block-registry](https://github.com/nao1215/block-registry) — the tools block can install
+- [Cookbook](./doc/cookbook.md): workflow steps indexed by task
+- [block](https://github.com/nao1215/block): the CLI this action installs
+- [block-registry](https://github.com/nao1215/block-registry): the tools block can install
 
 ## Testing
 
@@ -159,8 +148,7 @@ change to `block.lock` that belongs in a pull request, which is what
 ## Contributing
 
 Issues and pull requests are welcome; see [CONTRIBUTING.md](./CONTRIBUTING.md).
-Contributions are not only about code: a GitHub Star also motivates
-development.
+A GitHub Star also helps.
 
 ## LICENSE
 

@@ -13,9 +13,9 @@ restore its toolchain cache, and run the tools a repository pinned.
 - run: block exec forge test
 ```
 
-That is the whole CI story. `block sync` installs exactly what `block.lock`
-names — no version resolution, no lockfile rewrite — and `block exec` runs
-your tools with that toolchain on `PATH`.
+`block sync` installs what `block.lock` names without resolving versions or
+rewriting the lockfile, and `block exec` runs your tools with that toolchain on
+`PATH`.
 
 ## What it does
 
@@ -26,9 +26,9 @@ your tools with that toolchain on `PATH`.
   unchanged toolchain is restored instead of re-downloaded.
 - Optionally runs `block sync` so later steps can call `block exec`.
 
-Linux, macOS and Windows runners, on x86-64 and arm64 — every platform block
-itself publishes a build for. Whether a given tool has a build for the runner
-you chose is answered by `block.lock`, not by this action.
+It runs on Linux, macOS and Windows, on x86-64 and arm64, which is every
+platform block publishes a build for. Whether each tool has a build for the
+runner depends on `block.lock`.
 
 ## Without syncing
 
@@ -42,16 +42,15 @@ Leave `sync` off when the workflow wants to decide for itself:
 
 ## Watching for new versions
 
-CI never moves a pin: that is a change to `block.lock` and belongs in a pull
-request. A scheduled job can tell you when one is worth making — `block lock
---check` exits 2 when a newer release matches the manifest:
+CI never moves a pin; that change to `block.lock` belongs in a pull request.
+In a scheduled job, `block lock --check` exits 2 when a newer release matches
+the manifest:
 
 ```yaml
 - uses: nao1215/setup-block@v0
 - run: block lock --check
 ```
 
-The [cookbook](/cookbook/) has the rest — matrices across runners, monorepo
-subdirectories, cache control, signature and provenance verification, guarding
-the lockfile in a pull request, and reading a failure. The
-[reference](/reference/) lists every input and output.
+The [cookbook](/cookbook/) covers matrices, monorepo subdirectories, cache
+control, signature and provenance checks, guarding the lockfile, and reading a
+failure. The [reference](/reference/) lists every input and output.
