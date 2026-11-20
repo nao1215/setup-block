@@ -3,9 +3,9 @@
 Copyable workflow steps for installing a pinned blockchain toolchain in CI.
 Every snippet is a real step; drop it into a job and swap the tool names.
 
-The action installs the [block](https://github.com/nao1215/block) CLI and
-nothing else. block is what installs your tools, from `block.lock`, and it
-never resolves a version in CI — so nothing here can move a pin.
+The action installs only the [block](https://github.com/nao1215/block) CLI.
+block installs your tools from `block.lock` and never resolves a version in
+CI, so nothing here can move a pin.
 
 ## Find a recipe by task
 
@@ -43,14 +43,13 @@ jobs:
 step after it has every locked tool on `PATH` through `block exec`.
 
 Runners: Linux, macOS and Windows, on x86-64 and arm64. Which of them your
-*tools* have builds for is a different question, and it is answered by
-`block.lock` — see [locking for a platform you are not
-on](https://nao1215.github.io/block/cookbook/#lock-for-a-platform-you-are-not-on).
+tools have builds for depends on `block.lock`; see [locking for a platform you
+are not on](https://nao1215.github.io/block/cookbook/#lock-for-a-platform-you-are-not-on).
 
 ## Install without syncing
 
-Leave `sync` off when the job wants to decide for itself when the toolchain is
-installed — for example after a step that generates `block.toml`:
+Leave `sync` off when the job decides when the toolchain is installed, for
+example after a step that generates `block.toml`:
 
 ```yaml
 - uses: nao1215/setup-block@v0
@@ -70,8 +69,7 @@ The default is off, so this is what you get by writing nothing.
 ```
 
 `latest` is fine for a repository that tracks block closely. Pin an exact
-version when you want the CLI itself to change only when you say so — the
-same argument as pinning your tools, applied one level up.
+version when the CLI itself should change only when you say so.
 
 ## A matrix across runners
 
@@ -152,9 +150,9 @@ instead of downloading Foundry again.
 - run: echo "restored exactly: ${{ steps.setup.outputs.cache-hit }}"
 ```
 
-There are no partial-restore keys, on purpose: block re-verifies every
-artifact against the lockfile anyway, and a store restored from a different
-lockfile would be mostly discarded.
+There are no partial-restore keys, because block re-verifies every artifact
+against the lockfile and a store restored from a different lockfile would be
+mostly discarded.
 
 Manage the cache yourself:
 
@@ -198,8 +196,8 @@ checks are opt-in because each needs a tool on the runner:
 archive itself; it needs the `gh` CLI and a token, both present on
 GitHub-hosted runners.
 
-Each check fails the step rather than warning: a verification you asked for
-and did not get is not a verification.
+A check you enable fails the step when it cannot run or does not pass; it
+never downgrades to a warning.
 
 Turning the default off is possible and rarely right:
 
@@ -249,7 +247,7 @@ build for it:
 
 `block lock --check` resolves and writes nothing. It exits 0 when the lockfile
 is current, 2 when it would change, 1 on error. Keep it out of the required
-checks: a release upstream is news, not a broken build.
+checks, since a new upstream release does not mean the build is broken.
 
 ## Watch for upstream releases
 
@@ -296,13 +294,13 @@ jobs:
           branch: block/toolchain-update
 ```
 
-There is deliberately no "update the toolchain" input on this action. CI is
-where a pin must not move on its own.
+The action has no "update the toolchain" input, so a pin never moves on its
+own in CI.
 
 ## Beyond a plain step
 
 A service container or a Docker build does not see the runner's `$BLOCK_HOME`,
-so install the toolchain inside the image instead — copying `block.toml` and
+so install the toolchain inside the image. Copying `block.toml` and
 `block.lock` first makes it a cacheable layer:
 
 ```dockerfile
@@ -316,8 +314,8 @@ COPY block.toml block.lock ./
 RUN block sync
 ```
 
-A tool that has to keep running across steps — a devnet, a beacon node — is an
-ordinary background process:
+A tool that keeps running across steps, such as a devnet or a beacon node, is
+an ordinary background process:
 
 ```yaml
 - uses: nao1215/setup-block@v0
@@ -348,14 +346,14 @@ installed:
 ERROR: checksum mismatch for block_0.1.0_linux_amd64.tar.gz: expected e3b0c442..., got 9f86d081...
 ```
 
-A stronger check was asked for and the tool that performs it is missing. The
-step fails rather than quietly skipping it:
+A stronger check was asked for and the tool that performs it is missing, so
+the step fails:
 
 ```text
 ERROR: verify-signature is enabled but cosign is not on PATH. Add sigstore/cosign-installer before this action.
 ```
 
-`sync: "true"` was set but the project has no lockfile yet — run `block lock`
+`sync: "true"` was set but the project has no lockfile yet. Run `block lock`
 once, locally, and commit it:
 
 ```text

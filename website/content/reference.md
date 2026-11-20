@@ -36,10 +36,9 @@ toc: true
 block-<runner os>-<runner arch>-<hash of working-directory/block.lock>
 ```
 
-There are no `restore-keys`. A store restored from a different lockfile would
-be verified and then mostly discarded, since block installs per version and
-per artifact digest; re-downloading what actually changed is both simpler and
-faster. Set `cache: "false"` when a workflow manages `$BLOCK_HOME` itself.
+There are no `restore-keys`. block installs per version and per artifact
+digest, so a store restored from a different lockfile would be verified and
+then mostly discarded; downloading what changed is simpler and faster. Set `cache: "false"` when a workflow manages `$BLOCK_HOME` itself.
 
 ## Supply-chain checks
 
@@ -55,14 +54,13 @@ faster. Set `cache: "false"` when a workflow manages `$BLOCK_HOME` itself.
 which transitively covers every artifact listed there. `verify-attestation`
 checks the build provenance GitHub recorded for the archive.
 
-Both are opt-in because each needs a tool on the runner — `cosign` and `gh`
-respectively — and neither replaces the SHA-256 check, which is on by default.
+Both are opt-in because they need `cosign` and `gh` on the runner. The SHA-256
+check stays on by default either way.
 
 ## Errors you might see
 
 | Message | Meaning |
 | --- | --- |
-| `block does not ship Windows builds…` | Use a Linux or macOS runner. |
 | `failed to download block_…tar.gz` | The requested release or platform does not exist. |
 | `checksum mismatch for …` | The download did not match `checksums.txt`. Nothing is installed. |
 | `block.lock not found; run "block lock"` | `sync: "true"` ran in a directory without a lockfile. Check `working-directory`. |
