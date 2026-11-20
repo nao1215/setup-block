@@ -74,11 +74,8 @@ changed re-uses the same store instead of downloading Foundry again:
     sync: "true"
 ```
 
-The cache key is the runner OS, its architecture and the hash of that
-directory's `block.lock`. There are no partial-restore keys, because a store
-restored from a different lockfile would be mostly discarded after block
-verifies it. Set `cache: "false"` if your workflow manages `$BLOCK_HOME`
-itself.
+The key is the runner OS, its architecture and the hash of that directory's
+`block.lock`. [How the key works](https://nao1215.github.io/setup-block/reference/#the-cache-key).
 
 ## Supply-chain checks
 
@@ -93,10 +90,7 @@ stronger checks are available:
     verify-attestation: "true"   # gh attestation verify (needs the gh CLI)
 ```
 
-`verify-signature` checks the cosign bundle block publishes for
-`checksums.txt`, which transitively covers every artifact listed in it.
-`verify-attestation` checks the build provenance GitHub recorded for the
-archive itself.
+Details are in the [reference](https://nao1215.github.io/setup-block/reference/#supply-chain-checks).
 
 ## Inputs
 
